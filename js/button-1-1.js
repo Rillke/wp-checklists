@@ -6,11 +6,11 @@ function getBaseURL () {
 }
 
 (function() {
-    tinymce.create('tinymce.plugins.vecb_button1', {
+    tinymce.create('tinymce.plugins.wpcl_button', {
         init : function(ed, url) {
-            ed.addButton('vecb_button1', {
+            ed.addButton('wpcl_button', {
                 title : 'Checkliste',image : url+'/icons/circle-ok.png',onclick : function() {
-                     ed.selection.setContent('<div class="tapir-checklist">' + ed.selection.getContent() + '</div>');
+                     ed.selection.setContent('<div class="wpcl-checklist">' + ed.selection.getContent() + '</div>');
                 }
             });
         },
@@ -18,5 +18,5 @@ function getBaseURL () {
             return null;
         },
     });
-    tinymce.PluginManager.add('vecb_button1', tinymce.plugins.vecb_button1);
+    tinymce.PluginManager.add('wpcl_button', tinymce.plugins.wpcl_button);
 })();

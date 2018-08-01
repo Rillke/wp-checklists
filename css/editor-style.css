@@ -1,11 +1,11 @@
 @charset "UTF-8";
 /* CSS Document */
 
-.tapir-checklist p {
+.wpcl-checklist p {
    display: list-item;
 }
 
-.tapir-checklist {
+.wpcl-checklist {
    background: #f2f0d2;
 }
 
