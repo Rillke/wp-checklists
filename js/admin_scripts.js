@@ -1,6 +1,13 @@
 // JavaScript Document
 jQuery(document).ready(function() {
 	
+	try {
+	jQuery("#vecb_icon").msDropDown();
+	} catch(e) {
+	alert(e.message);
+	}
+	
+	
    jQuery('#vecb_single-block').hide();
    jQuery('#vecb_quicktag').hide();
    
@@ -20,8 +27,10 @@ jQuery(document).ready(function() {
    
    if(jQuery('#vecb_rich_editor').is(':checked')) { 
   	jQuery('#vecb_btnicon').show();
+	jQuery('#vecb_rowdef').show();
    } else {
 	jQuery('#vecb_btnicon').hide();
+	jQuery('#vecb_rowdef').hide();
    }
   
   jQuery('.vecb_radiobtn').change(function() {
@@ -45,51 +54,45 @@ jQuery(document).ready(function() {
   
   //Preview
   
-    var customicon = jQuery('#vecb_custom').val();
-	
-	if (customicon) {
-	var iconname = 	customicon;
-	} else {
     var iconname = jQuery('#vecb_icon').val();
-	}
 	
 	var pluginurl = jQuery('#vecb_pluginurl').html();
+	var custompluginurl = jQuery('#vecb_custompluginurl').html();
 	
-	 jQuery('#vecb_btnpreview').html('<img src="'+ pluginurl + '/visual-editor-custom-buttons/js/icons/'+ iconname + '">');
+	if(iconname) {
+    var firstletter = (iconname.charAt(0));
+	}
+	if (firstletter == "_") {
+		if(iconname) {
+		iconname = iconname.substr(1);
+		}
+		jQuery('#vecb_btnpreview').html('<div id="vecb_btnimg"><img src="'+ custompluginurl + iconname + '"></div>');
+	} else {
+		jQuery('#vecb_btnpreview').html('<div id="vecb_btnimg"><img src="'+ pluginurl + '/visual-editor-custom-buttons/js/icons/'+ iconname + '"></div>');
+	}
+	
+	 
   
   
   jQuery('#vecb_icon').change(function() {
 	  
-	var customicon = jQuery('#vecb_custom').val();
 	
-	if (customicon) {
-	var iconname = 	customicon;
-	} else {
     var iconname = jQuery('#vecb_icon').val();
-	}
 	
-	  
-	 jQuery('#vecb_btnpreview').html('<img src="'+ pluginurl + '/visual-editor-custom-buttons/js/icons/'+ iconname + '">');
+	if(iconname) {
+	var firstletter = (iconname.charAt(0));
+	}
+	if (firstletter == "_") {
+		if(iconname) {
+		 iconname = iconname.substr(1);
+		}
+		jQuery('#vecb_btnpreview').html('<div id="vecb_btnimg"><img src="'+ custompluginurl + iconname + '"></div>');
+	} else {
+		jQuery('#vecb_btnpreview').html('<div id="vecb_btnimg"><img src="'+ pluginurl + '/visual-editor-custom-buttons/js/icons/'+ iconname + '"></div>');
+	}
 	  
   });
   
-  
-  jQuery('#vecb_custom').blur(function() {
-	  
-	 var customicon = jQuery('#vecb_custom').val();
-	
-	if (customicon) {
-	var iconname = 	customicon;
-	} else {
-    var iconname = jQuery('#vecb_icon').val();
-	}
-	
-	  var pluginurl = jQuery('#vecb_pluginurl').html();
-	  
-	 jQuery('#vecb_btnpreview').html('<img src="'+ pluginurl + '/visual-editor-custom-buttons/js/icons/'+ iconname + '">');
-	
-	  
-  });
   
   //
   

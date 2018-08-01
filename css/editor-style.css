@@ -1,3 +1,11 @@
 @charset "UTF-8";
 /* CSS Document */
 
+.tapir-checklist p {
+   display: list-item;
+}
+
+.tapir-checklist {
+   background: #f2f0d2;
+}
+

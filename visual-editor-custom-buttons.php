@@ -1,19 +1,403 @@
 <?php
 /*
 Plugin Name: Visual Editor Custom Buttons
-Plugin URI: http://www.cyberduck.se
+Plugin URI: http://eborninteractive.se
 Description: Create custom buttons in Wordpress Visual Editor.
-Version: 0.9
+Version: 1.5.2.2
 Author: Ola Eborn
-Author URI: http://www.cyberduck.se
+Author URI: http://eborninteractive.se
+Text Domain: visual-editor-custom-buttons
 License: GPL
 */
 
 add_action('init', 'vecb_editor_buttons');
 add_action("admin_init", "vecb_admin_init");
 add_action('save_post', 'vecb_save_options');
+add_action('init', 'vecb_initual_setup');
+add_action('admin_menu' , 'vecb_setting_page'); 
+ 
+
+/************************************************************************
+*                                                                       *
+*   Settings Page                                                      *
+*                                                                       *
+*************************************************************************/
+function vecb_setting_page() {
+    add_submenu_page('edit.php?post_type=vecb_editor_buttons', 'Visual Editor Custom Button Settings', 'Settings', 'edit_posts', basename(__FILE__), 'vecb_settings');
+}
+
+add_action('admin_init', 'vecb_settings_store');
+
+function vecb_settings_store() {
+    register_setting('vecb_settings', 'vecb_row');
+	global $wp_roles;
+  $roles = $wp_roles->get_names();
+  foreach($roles as $role) {
+	register_setting('vecb_settings', 'vecb_access_'.$role);
+  }
+}
+
+function vecb_settings() { ?>
+
+    <div class="wrap">
+
+        <h2>Visual Editor Custom Buttons Settings</h2>
+
+        <form method="post" action="options.php">
+
+            <?php settings_fields('vecb_settings'); 
+			
+			$rowvalue = get_option('vecb_row');
+			
+			
+			$selected1 = "";
+			$selected2 = "";
+			$selected3 = "";
+			
+		    if($rowvalue == "" || $rowvalue == NULL) {
+				$selected1 = "checked";
+			}
+			
+			if($rowvalue == "_2") {
+				$selected2 = "checked";
+			}
+			
+			if($rowvalue == "_3") {
+				$selected3 = "checked";
+			}
+			
+			
+			
+			
+			$access_sel = array();
+			
+			for($i=0;$i<=5;$i++) {
+			
+			$access_sel[$i] = "";
+		
+			}
+			
+			?>
+
+<div class="recb_inputblock"><div class="vecb_label">Display buttons on row</div>
+  <input type="radio" name="vecb_row"  value="" <?php echo $selected1 ?> />
+  <label for="wrap">&nbsp;Row 1</label>&nbsp;&nbsp;&nbsp;&nbsp;
+  <input type="radio" name="vecb_row"  value="_2" <?php echo $selected2 ?> />
+  <label for="_2">&nbsp;Row 2</label>&nbsp;&nbsp;&nbsp;&nbsp;<input type="radio" name="vecb_row" value="_3" <?php echo $selected3 ?> />
+  <label for="_3">&nbsp;Row 3</label></div>
+  
+  
+  <div class="recb_inputblock"><div class="vecb_label">Allow other user roles to administer buttons</div>
+  
+  <?php
+  
+  global $wp_roles;
+  $roles = $wp_roles->get_names();
+  
+  $accessvalue = array();
+ 
+  
+  foreach ($roles as $role) :
+  $accessvalue[$role] = get_option('vecb_access_'.$role);
+  endforeach;
+  
+  
+  foreach ($roles as $role) { 
+  
+ echo get_option('vecb_access_.'.$role);
+  
+  $count ++;
+  if($role == $accessvalue[$role] )  {
+  
+  $checked = "checked";
+  
+  } else {
+	
+	$checked = "";  
+  
+  }
+  
+  if($role !="Administrator" && $role !="Subscriber") {
+  ?>
+  
+  <input name="vecb_access_<?php echo $role ?>" type="checkbox" <?php echo $checked ?> value="<?php echo $role ?>" /> <?php echo $role ?><br />
+  
+  <?php } } ?>
+  
+   
+
+            <p class="submit">
+                <input type="submit" class="button-primary" value="Save Settings" />
+            </p>
+            
+            
+            
+
+        </form>
+
+    </div>
+
+<?php } 
+
+/***********************************************************************/
 
 
+/************************************************************************
+*                                                                       *
+*   Initual Setup                                                       *
+*                                                                       *
+*************************************************************************/
+
+function vecb_initual_setup() {
+	
+//Get current user role
+function vecb_get_current_user_role() {
+    global $current_user;
+    get_currentuserinfo();
+    $user_roles = $current_user->roles;
+    $user_role = array_shift($user_roles);
+    return $user_role;
+};
+//
+
+
+$rowvalue = get_option('vecb_row');
+
+$vecb_current_user = ucfirst(vecb_get_current_user_role());
+
+  $accessvalue = array();
+  
+  global $wp_roles;
+  $roles = $wp_roles->get_names();
+ 
+  foreach ($roles as $role) :
+  $accessvalue[$role] = get_option('vecb_access_'.$role);
+  endforeach;
+  
+  
+
+if(!in_array($vecb_current_user,$accessvalue) && $vecb_current_user != "Administrator") {
+
+	
+//Add content to admin head
+function vecb_remove_menuitem() {
+	echo '
+	<style>
+	li#menu-posts-vecb_editor_buttons, li#wp-admin-bar-new-vecb_editor_buttons {
+display: none;
+}
+	</style>
+	';
+}
+
+add_action('admin_head', 'vecb_remove_menuitem');
+//
+
+}
+
+if($vecb_current_user != "Administrator") {
+
+	
+//Add content to admin head
+function vecb_remove_menusettingsitem() {
+	echo '
+	<style>
+	li#menu-posts-vecb_editor_buttons ul li:nth-child(4) {
+display: none;
+}
+	</style>
+	';
+}
+
+add_action('admin_head', 'vecb_remove_menusettingsitem');
+//
+
+}
+	
+
+$file = WP_PLUGIN_DIR."/visual-editor-custom-buttons/css/editor-style.css";	
+
+
+if(!file_exists($file)) :	
+// echo "filen finns ej";
+
+// Save updates to files
+
+ $args = array( 'post_type' => 'vecb_editor_buttons', 
+'posts_per_page' => -1, 
+'order' => 'asc');
+
+
+$loop = new WP_Query( $args );
+$count = 0;
+
+
+$stylefile = WP_PLUGIN_DIR. '/visual-editor-custom-buttons/css/editor-style.css';
+
+$style = '@charset "UTF-8";
+/* CSS Document */
+
+';
+
+while ( $loop->have_posts() ) : $loop->the_post(); 
+
+
+$id = get_the_ID();
+$count ++;
+$custom = get_post_custom($post->ID);
+$left_tag = $custom["left_tag"][0];
+$right_tag = $custom["right_tag"][0];
+$styling = $custom["styling_content"][0];
+$selection = $custom["content-type"][0];
+$block_content = $custom["block_content"][0];
+$icon = $custom["icon"][0];
+$custom_icon = $custom["custom_icon"][0];
+	
+	if ($custom_icon) {
+		$icon = $custom_icon;
+	}
+	
+
+//Remove Linebreaks
+$block_content = str_replace("\r\n","",$block_content);
+$right_tag = str_replace("\r\n","",$right_tag);
+$left_tag = str_replace("\r\n","",$left_tag);
+//
+
+$blog_id = get_current_blog_id();
+
+$file = WP_PLUGIN_DIR. '/visual-editor-custom-buttons/js/button-'.$blog_id.'-'.$count.'.js';
+
+
+$current = file_get_contents($file);
+
+
+/************************************************************************
+ *
+ *  Generate Visual Editor Button JS-files
+ *
+ ************************************************************************/
+
+if($selection == "wrap") {
+
+$custom= false;		
+$first = substr($icon,0,1);
+if ($first == "_") {
+$icon = substr($icon, 1);
+$custom= true;	
+}
+
+$uploads = wp_upload_dir();
+	$uploaddir = $uploads['basedir']."/vecb/";
+	$uploadurl = $uploads['baseurl']."/vecb/";
+
+$current = "// JavaScript Document
+
+function getBaseURL () {
+   return location.protocol + '//' + location.hostname + 
+      (location.port && ':' + location.port) + '/';
+}
+
+(function() {
+    tinymce.create('tinymce.plugins.vecb_button".$count."', {
+        init : function(ed, url) {
+            ed.addButton('vecb_button".$count."', {
+                title : '".get_the_title()."',";
+      if($custom == false) {
+	  $current .="image : url+'/icons/".$icon."',";
+	  } else {
+	  $current .="image : '".$uploadurl.$icon."',"; 
+	  }
+      $current .=          "onclick : function() {
+                     ed.selection.setContent('". $left_tag . "' + ed.selection.getContent() + '". $right_tag ."');
+                }
+            });
+        },
+        createControl : function(n, cm) {
+            return null;
+        },
+    });
+    tinymce.PluginManager.add('vecb_button".$count."', tinymce.plugins.vecb_button".$count.");
+})();";
+
+} else {
+	
+$custom= false;		
+$first = substr($icon,0,1);
+if ($first == "_") {
+$icon = substr($icon, 1);
+$custom= true;	
+}
+
+$uploads = wp_upload_dir();
+	$uploaddir = $uploads['basedir']."/vecb/";
+	$uploadurl = $uploads['baseurl']."/vecb/";
+	
+$current = "// JavaScript Document
+
+function getBaseURL () {
+   return location.protocol + '//' + location.hostname + 
+      (location.port && ':' + location.port) + '/';
+}
+
+(function() {
+    tinymce.create('tinymce.plugins.vecb_button".$count."', {
+        init : function(ed, url) {
+            ed.addButton('vecb_button".$count."', {
+                title : '".get_the_title()."',";
+      if($custom == false) {
+	  $current .="image : url+'/icons/".$icon."',";
+	  } else {
+	  $current .="image : '".$uploadurl.$icon."',"; 
+	  }
+      $current .=          "onclick : function() {
+                     ed.selection.setContent('".$block_content."');
+                }
+            });
+        },
+        createControl : function(n, cm) {
+            return null;
+        },
+    });
+    tinymce.PluginManager.add('vecb_button".$count."', tinymce.plugins.vecb_button".$count.");
+})();";
+	
+}
+
+
+
+
+$style .= $styling . "
+
+";
+
+// Write the contents back to the file
+file_put_contents($file, $current);
+
+/************************************************************************************/
+
+
+
+//
+
+endwhile;
+
+file_put_contents($stylefile, $style);
+
+//add_action('admin_print_footer_scripts',  '_add_my_quicktags');
+add_action('after_wp_tiny_mce', '_add_my_quicktags');
+add_action('admin_init', 'vecb_add_buttons');
+
+
+endif;
+
+}
+
+/************************************************************************************/
+/************************************************************************************/
+
+
+                                         
 
 function vecb_editor_buttons() {
 	
@@ -28,7 +412,6 @@ if ( ! function_exists('tdav_css') ) {
 		$url = plugins_url()."/visual-editor-custom-buttons";
 	
 		$wp .= ',' . $url.'/css/editor-style.css';
-			
 	return $wp;
 	}
 }
@@ -53,6 +436,47 @@ function vecb_customAdmin() {
 	 echo '<script type="text/javascript" src="' . $url . '/js/admin_scripts.js"></script>';
 	 echo '<link rel="stylesheet" type="text/css" href="' . $url .  '/css/admin-style.css">';
 	 
+	 echo '<script src="' . $url . '/js/msdropdown/jquery.dd.min.js" type="text/javascript"></script>';
+	 echo '<link rel="stylesheet" type="text/css" href="' . $url . '/css/msdropdown/dd.css" />';
+	 
+	 $wp_version = get_bloginfo('version');
+
+
+if ($wp_version >=3.8) {
+	
+	
+echo '<style>
+
+#menu-posts-vecb_editor_buttons .wp-menu-image {
+	background:none !important;
+}
+
+#menu-posts-vecb_editor_buttons .wp-menu-image:before {
+	content: \'\f111\' !important;
+}
+
+.mceIcon img {
+	opacity: 0.655;
+}
+
+.mceIcon:hover img {
+	opacity: 1;
+}
+.mce-i-none {
+	opacity: 0.655;
+}
+
+#vecb_btnpreview {
+	opacity: 0.655;
+}
+
+#vecb_btnpreview:hover {
+	opacity: 1;
+}
+</style>';
+	
+} 
+	 
 	 //echo '<link rel="stylesheet" type="text/css" href="' . plugin_dir_url($file) .  'editor-style.css">';
      
 }
@@ -60,12 +484,12 @@ function vecb_customAdmin() {
 add_action('admin_head', 'vecb_customAdmin');
 
 
-function vecb_frontendstyle() {
+/*function vecb_frontendstyle() {
 	echo '<link rel="stylesheet" type="text/css" href="' . $url .  '/css/editor-style.css">';
 }
 
 
-add_action('wp_head', 'vecb_frontendstyle');
+add_action('wp_head', 'vecb_frontendstyle'); */
 
 /************************************************************************/
 
@@ -74,32 +498,30 @@ add_action('wp_head', 'vecb_frontendstyle');
  *  Register Post Type And Add Custom Fields
  *
  ************************************************************************/	
+ 
+   $labels = array(
+    'name' => 'Visual Editor Custom Buttons',
+    'singular_name' => 'Custom button',
+    'add_new' => 'Add new',
+    'add_new_item' => 'Add new button',
+    'edit_item' => 'Edit button',
+    'new_item' => 'New button',
+    'all_items' => 'All buttons',
+    'view_item' => 'View button',
+    'search_items' => 'Search buttons',
+    'not_found' =>  'No button found',
+    'not_found_in_trash' => 'No button found in trash', 
+    'parent_item_colon' => '',
+    'menu_name' => 'Visual Editor Custom Buttons'
+  );
+  
+	
 	
 $args = array(
 
-'name' => 'vecb_editor_buttons',
+'labels' => $labels,
 
-'label' => __('Visual Editor Custom Buttons'),
-
-'singular_label' => __('Custom button'),
-
-'add_new' => __('Add new button'),
-
-'all_items' => __('Visual Editor Custom Buttons'),
-
-'edit_item' => __('Edit button'),
-
-'new_item' => __('New button'),
-
-'view_item' => __('View button'),
-
-'search_items' => __('Search buttons'),
-
-'not_found' => __('No buttons found'),
-
-'not_found_in_trash' => __('No buttons found in trash'),
-
-'public' => true,
+'public' => false,
 
 'show_ui' => true,
 
@@ -111,9 +533,14 @@ $args = array(
 
 'supports' => array('title'),
 
-'menu_position' => 100
+'menu_position' => 100,
+
+'exclude_from_search' => true,
+
+'show_in_nav_menus' => false
 
 );
+
 
 register_post_type( 'vecb_editor_buttons' , $args );
 
@@ -121,8 +548,8 @@ register_post_type( 'vecb_editor_buttons' , $args );
 function vecb_admin_init(){
 add_meta_box("_vecb_tags", "Button Content", "vecb_tag_options", "vecb_editor_buttons", "normal", "low");
 
-add_meta_box("_vecb_editor", "Display in editor", "vecb_editor_options", "vecb_editor_buttons", "normal", "low");
-add_meta_box("_vecb_styling", "Visual Editor content styling", "vecb_styling_options", "vecb_editor_buttons", "normal", "low");
+add_meta_box("_vecb_editor", "Display In Editor", "vecb_editor_options", "vecb_editor_buttons", "normal", "low");
+add_meta_box("_vecb_styling", "Visual Editor Content Styling", "vecb_styling_options", "vecb_editor_buttons", "normal", "low");
 
 }
 
@@ -159,7 +586,7 @@ function vecb_tag_options() {
 	<textarea name="right_tag" id="left_tag" cols="45" rows="5">' . $right_tag  . '</textarea></div></section>';
 	
 	$content .= '<div id="vecb_single-block" class="vecb_inputbox recb_inputblock"><div class="vecb_label">Content</div>
-	<textarea name="block_content" id="content" cols="45" rows="5">' . $block_content . '</textarea></div>';
+	<textarea name="block_content" cols="45" rows="5">' . $block_content . '</textarea></div>';
 	
 	echo $content;
 	
@@ -184,7 +611,45 @@ function vecb_editor_options() {
 	$sel2 = "";
 	$sel3 = "";
 	
-	$btnicons = array(
+	
+	//Get files from folder//
+	$dir = WP_PLUGIN_DIR."/visual-editor-custom-buttons/js/icons/";
+	
+	$uploads = wp_upload_dir();
+	$uploaddir = $uploads['basedir']."/vecb/";
+	$uploadurl = $uploads['baseurl']."/vecb/";
+	
+	
+	if(is_dir($uploaddir)){
+       $uploadfiles = scandir($uploaddir);        
+     } 
+	
+	$files = scandir($dir);
+	
+	
+	
+	$btnicons[] = "none.png";
+	
+	if(count($uploadfiles) >2) {
+	//$customicons[] = "-----------------";
+	
+	foreach($uploadfiles as $file) {
+		if($file != "." && $file != "..") {
+			$customicons[] = $file;
+		}
+	}
+	
+	//$customicons[] = "-----------------";
+	}
+	
+	foreach($files as $file) {
+		if($file != "none.png" && $file != "." && $file != "..") {
+			$btnicons[] = $file;
+		}
+	}
+	//
+	
+	/*$btnicons = array(
 	
 	"none.png",
 	"2_col.png",
@@ -235,15 +700,28 @@ function vecb_editor_options() {
 	"vimeo.png",
 	"youtube.png"
 	
-	);
+	); */
 
 	$sel = array();
+
 	
 	for ($i=0;$i<count($btnicons);$i++) {
 	    if ($icon == $btnicons[$i]) {
 		$sel[$i] = "selected";
 		} else {
 		$sel[$i] = "";	
+		}
+	}
+			
+
+	$thisicon = substr($icon, 1);	
+
+	
+	for ($i=0;$i<count($customicons);$i++) {
+	    if ($thisicon == $customicons[$i]) {
+		$customsel[$i] = "selected";
+		} else {
+		$customsel[$i] = "";	
 		}
 	}
 
@@ -263,21 +741,48 @@ function vecb_editor_options() {
 		$he = "";
 	} 
 	
+
+
+
+	
 	$content = ' <div class="recb_inputblock"><input type="checkbox" name="rich_editor" id="vecb_rich_editor" value="rich_editor" '.$re.'>
   <label for="rich_editor">&nbsp;Visual Editor</label>&nbsp;&nbsp;&nbsp;&nbsp;
   <input type="checkbox" name="html_editor" id="vecb_html_editor" value="html_editor" '.$he.'>
-  <label for="html_editor">&nbsp;HTML Editor</label></div>';
+  <label for="html_editor">&nbsp;Text Editor</label></div>';
+  
+  
   
   $content .= '<div id="vecb_btnicon"><div class="vecb_iconselect"><div class="recb_label">Button Icon</div>
   <select name="icon" id="vecb_icon">';
   
- for ($i=0;$i<count($btnicons);$i++) {
+  $ticon = explode(".", $btnicons[0]);
+  $theicon = str_replace("_"," ",$ticon[0]);
+  $theicon = ucfirst($theicon);
+	 
+  $content .= '<option value="'.$btnicons[0].'" '.$sel[0].' >'.$theicon.'</option>';
+  
+  for ($i=0;$i<count($customicons);$i++) {
+	
+	 $ticon = explode(".", $customicons[$i]);
+	 $theicon = str_replace("_"," ",$ticon[0]);
+	 $theicon = ucfirst($theicon);
+	
+	if($customicons[$i] != "-----------------") {
+	$content .= '<option value="_'.$customicons[$i].'" data-image="'.$uploadurl.$customicons[$i].'" '.$customsel[$i].' >'.$theicon.'</option>';
+	} else {
+	$content .= '<option value="none.png" '.$customsel[$i].' >'.$theicon.'</option>';	
+	}
+ }
+ 
+ $url = plugins_url()."/visual-editor-custom-buttons";
+  
+ for ($i=1;$i<count($btnicons);$i++) {
 	
 	 $ticon = explode(".", $btnicons[$i]);
 	 $theicon = str_replace("_"," ",$ticon[0]);
 	 $theicon = ucfirst($theicon);
 	
-	$content .= '<option value="'.$btnicons[$i].'" '.$sel[$i].' >'.$theicon.'</option>';
+		$content .= '<option value="'.$btnicons[$i].'" data-image="'.$url .'/js/icons/'.$btnicons[$i].'" '.$sel[$i].' >'.$theicon.'</option>';
 	 
  }
   
@@ -285,18 +790,26 @@ function vecb_editor_options() {
   $content .= '</select></div>';
   
   $content .= '<div id="vecb_pluginurl" style="display:none">'.plugins_url().'</div>';
+   $content .= '<div id="vecb_custompluginurl" style="display:none">'.$uploadurl.'</div>';
   
-  $content .= '<div class="vecb_preview"><div style="padding:23px 0 0 8px"><span id="vecb_btnpreview"><img src="'.plugins_url().'/visual-editor-custom-buttons/js/icons/none.png"></span><div class="vecb_preview_text">Preview</div></div></div>';
+  $content .= '<div class="vecb_preview"><div style="padding:23px 0 0 8px"><span id="vecb_btnpreview"><div id="vecb_btnimg"><img src="'.plugins_url().'/visual-editor-custom-buttons/js/icons/none.png"></div></span><div class="vecb_preview_text">Preview</div></div></div>';
 
-  $content .= ' <div class="recb_inputblock"><div class="vecb_label">Custom Icon</div>
-    <div class="vecb_desc">Add your custom icon by adding your icon (20x20px) in the plugin icon folder: 
-	<strong>..plugins/visual-editor-custom-buttons/js/icons/</strong>
-	and writing the icon name below.</div>
-  <input type="text" id="vecb_custom" placeholder="my_icon.png" class="vecb_text" value="'.$custom_icon.'" name="custom_icon"></div></div>
+  $content .= ' <div class="recb_inputblock"><div class="vecb_label">Custom Icons</div>
+    <div class="vecb_desc">Add your custom icons by creating a new folder called <strong>vecb</strong> in the wordpress upload directory and adding your icons (40x40px) there. The correct path for the custom icons should be: <br>
+	<strong>...wp-content/uploads/vecb/</strong>. When added, the icons will automatically show up the Button Icon dropdown-menu.
+  </div></div>
 
   ';
   
-  $content .= '<div id="vecb_quicktag" class="recb_inputblock"><div class="vecb_label">Quicktag Label</div>
+ /* $content .= '<div id="vecb_rowdef"><div class="recb_inputblock"><div class="vecb_label">Display On Row</div>
+  <input type="radio" name="row"  value="" />
+  <label for="wrap">&nbsp;Row 1</label>&nbsp;&nbsp;&nbsp;&nbsp;
+  <input type="radio" name="row"  value="_2" />
+  <label for="_2">&nbsp;Row 2</label>&nbsp;&nbsp;&nbsp;&nbsp;<input type="radio" name="row" value="_3" />
+  <label for="_3">&nbsp;Row 3</label></div></div>';*/
+  
+  
+  $content .= '</div><div id="vecb_quicktag" class="recb_inputblock"><div class="vecb_label">Quicktag Label</div>
   <div class="vecb_desc">If not set, button title will be used.</div>
   <input type="text" class="vecb_text" value="'.$quicktag.'" name="quicktag"></div>';
 
@@ -334,8 +847,8 @@ function vecb_save_options()
 	update_post_meta($post->ID, "rich_editor", $_POST["rich_editor"]);
 	update_post_meta($post->ID, "html_editor", $_POST["html_editor"]);
 	update_post_meta($post->ID, "icon", $_POST["icon"]);
-	update_post_meta($post->ID, "custom_icon", $_POST["custom_icon"]);
 	update_post_meta($post->ID, "quicktag", $_POST["quicktag"]);
+	update_post_meta($post->ID, "row", $_POST["row"]);
 	
 	
 // Save updates to files
@@ -369,6 +882,7 @@ $selection = $custom["content-type"][0];
 $block_content = $custom["block_content"][0];
 $icon = $custom["icon"][0];
 $custom_icon = $custom["custom_icon"][0];
+$rownr = $custom["row"][0];
 	
 	if ($custom_icon) {
 		$icon = $custom_icon;
@@ -381,12 +895,13 @@ $right_tag = str_replace("\r\n","",$right_tag);
 $left_tag = str_replace("\r\n","",$left_tag);
 //
 
+$blog_id = get_current_blog_id();
+
+$file = WP_PLUGIN_DIR. '/visual-editor-custom-buttons/js/button-'.$blog_id.'-'.$count.'.js';
 
 
-$file = WP_PLUGIN_DIR. '/visual-editor-custom-buttons/js/button'.$count.'.js';
-
-
-$current = file_get_contents($file);
+/*$current = file_get_contents($file);*/
+$current = file_exists($file) ? file_get_contents($file) : "";
 
 
 /************************************************************************
@@ -397,14 +912,35 @@ $current = file_get_contents($file);
 
 if($selection == "wrap") {
 
+$custom= false;		
+$first = substr($icon,0,1);
+if ($first == "_") {
+$icon = substr($icon, 1);
+$custom= true;	
+}
+
+$uploads = wp_upload_dir();
+	$uploaddir = $uploads['basedir']."/vecb/";
+	$uploadurl = $uploads['baseurl']."/vecb/";
+
 $current = "// JavaScript Document
+
+function getBaseURL () {
+   return location.protocol + '//' + location.hostname + 
+      (location.port && ':' + location.port) + '/';
+}
+
 (function() {
-    tinymce.create('tinymce.plugins.button".$count."', {
+    tinymce.create('tinymce.plugins.vecb_button".$count."', {
         init : function(ed, url) {
-            ed.addButton('button".$count."', {
-                title : '".get_the_title()."',
-                image : url+'/icons/".$icon."',
-                onclick : function() {
+            ed.addButton('vecb_button".$count."', {
+                title : '".get_the_title()."',";
+      if($custom == false) {
+	  $current .="image : url+'/icons/".$icon."',";
+	  } else {
+	  $current .="image : '".$uploadurl.$icon."',"; 
+	  }
+      $current .=          "onclick : function() {
                      ed.selection.setContent('". $left_tag . "' + ed.selection.getContent() + '". $right_tag ."');
                 }
             });
@@ -413,19 +949,40 @@ $current = "// JavaScript Document
             return null;
         },
     });
-    tinymce.PluginManager.add('button".$count."', tinymce.plugins.button".$count.");
+    tinymce.PluginManager.add('vecb_button".$count."', tinymce.plugins.vecb_button".$count.");
 })();";
 
 } else {
 	
+$custom= false;		
+$first = substr($icon,0,1);
+if ($first == "_") {
+$icon = substr($icon, 1);
+$custom= true;	
+}
+
+$uploads = wp_upload_dir();
+	$uploaddir = $uploads['basedir']."/vecb/";
+	$uploadurl = $uploads['baseurl']."/vecb/";
+	
 $current = "// JavaScript Document
+
+function getBaseURL () {
+   return location.protocol + '//' + location.hostname + 
+      (location.port && ':' + location.port) + '/';
+}
+
 (function() {
-    tinymce.create('tinymce.plugins.button".$count."', {
+    tinymce.create('tinymce.plugins.vecb_button".$count."', {
         init : function(ed, url) {
-            ed.addButton('button".$count."', {
-                title : '".get_the_title()."',
-                image : url+'/icons/".$icon."',
-                onclick : function() {
+            ed.addButton('vecb_button".$count."', {
+                title : '".get_the_title()."',";
+      if($custom == false) {
+	  $current .="image : url+'/icons/".$icon."',";
+	  } else {
+	  $current .="image : '".$uploadurl.$icon."',"; 
+	  }
+      $current .=          "onclick : function() {
                      ed.selection.setContent('".$block_content."');
                 }
             });
@@ -434,7 +991,7 @@ $current = "// JavaScript Document
             return null;
         },
     });
-    tinymce.PluginManager.add('button".$count."', tinymce.plugins.button".$count.");
+    tinymce.PluginManager.add('vecb_button".$count."', tinymce.plugins.vecb_button".$count.");
 })();";
 	
 }
@@ -460,9 +1017,14 @@ endwhile;
 file_put_contents($stylefile, $style);
 
 endif;
-}
 
 }
+
+
+
+}
+
+
 
 
 /************************************************************************
@@ -512,7 +1074,7 @@ if ($quicktag != "") {
    $content .= "QTags.addButton( 'btn".$count."', '".$tagtitle."', '".$left_tag."', '".$right_tag."' );
    ";
    } else {
-	$content .= "QTags.addButton( 'btn".$count."', '".$tagtitle."', '".$block_content."', '&nbsp;' );   
+	$content .= "QTags.addButton( 'btn".$count."', '".$tagtitle."', '".$block_content."', '' );   
 	";
    }
    endif;
@@ -562,7 +1124,9 @@ function vecb_add_buttons() {
  
    if ( get_user_option('rich_editing') == 'true' ) {
      add_filter( 'mce_external_plugins', 'vecb_add_plugin' );
-     add_filter( 'mce_buttons', 'vecb_register_button' );
+     
+	 $rowvalue = get_option('vecb_row');
+	 add_filter( 'mce_buttons'.$rowvalue, 'vecb_register_button' );
    }
  
 }
@@ -571,56 +1135,41 @@ function vecb_add_buttons() {
 Register Button
 */
 
-
 function vecb_register_button( $buttons ) {
-	
- $args = array( 'post_type' => 'vecb_editor_buttons', 
-'posts_per_page' => -1, 
-'order' => 'asc');
-$loop = new WP_Query( $args );
-$count=0;
 
-$count = 0;
-while ( $loop->have_posts() ) : $loop->the_post(); 
+$count_posts = wp_count_posts('vecb_editor_buttons');
+$count_posts = $count_posts->publish;
 
-$id = get_the_ID();
+for ($i=0;$i<$count_posts;$i++) {
 $count ++;
-
-global $post;
-$custom = get_post_custom($post->ID);
-$rich_editor = $custom["rich_editor"][0];
-
-if($rich_editor) {
-array_push( $buttons, "button".$count);
+array_push( $buttons, "vecb_button".$count);
 }
-
-endwhile;
 
 return $buttons;
 }
+
+
 /**
 Register TinyMCE Plugin
 */
  
 function vecb_add_plugin( $plugin_array ) {
 	
+$count_posts = wp_count_posts('vecb_editor_buttons');
+$count_posts = $count_posts->publish;
+
+ $url = plugins_url()."/visual-editor-custom-buttons";
+ 
+ for ($i=0;$i<$count_posts;$i++) {
+	 
+	 $count ++;
+	 
+	 $blog_id = get_current_blog_id();
+ 
+   	$plugin_array['vecb_button'.$count] = $url.'/js/button-'.$blog_id.'-'.$count.'.js';
 	
- $args = array( 'post_type' => 'vecb_editor_buttons', 
-'posts_per_page' => -1, 
-'order' => 'asc');
+ }	
 
-$loop = new WP_Query( $args );
-$count = 0;
-
-while ( $loop->have_posts() ) : $loop->the_post(); 
-
-$id = get_the_ID();
-$count ++;
-
-	$url = plugins_url()."/visual-editor-custom-buttons";
-   	$plugin_array['button'.$count] = $url.'/js/button'.$count.'.js';
-   
- endwhile;
  
    return $plugin_array;
 }

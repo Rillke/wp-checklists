@@ -3,9 +3,9 @@ Contributors: cyberduck
 Donate link: 
 Tags: visual editor, rich editor, tiny mce editor, buttons, custom, quicktag, html editor, tinymce, customize
 Requires at least: 3.0
-Tested up to: 4.1.1
-Stable tag: 1.5.1
-Version: 1.5.1
+Tested up to: 4.7
+Stable tag: 1.5.2.2
+Version: 1.5.2.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,8 +62,19 @@ About the Button CSS not visible in the Visual Editor (you can´t se any effect 
 
 == Changelog ==
 
+= 1.5.2.2 =
+* Php-error fixed. Thanks tim-reeves.
+* Function conflict error fixed.
+* Minor icon color change.
+
+= 1.5.2.1 =
+* New Preamble Icon added.
+
+= 1.5.2 =
+* Error: 8305 Uncaught ReferenceError: QTags is not defined error, is now fixed. Thanks luantt.
+
 = 1.5.1 =
-* removing option for non authorized user to add custom buttons from the top admin bar
+* removing option for non authorized user to add custom buttons from the top admin bar.
 
 = 1.5 = 
 * Brand new Visual Icon Select menu! Now you can see the icon directly in the menu. No more need for the preview box.
