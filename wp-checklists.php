@@ -9,8 +9,29 @@
  * Text Domain: wp-checklists
  * License: GPL
  */
-add_action('init', 'wpcl_editor_buttons');
 
+/**
+ * **********************************************************************
+ *
+ * Add global JavaScript file to page.
+ *
+ * **********************************************************************
+ */
+
+// not working for customer with broken theme
+add_action( 'wp_enqueue_scripts', 'wpcl_global_script' );
+function wpcl_global_script()
+{
+    // Register and enqueue global script to footer
+    wp_register_script( 'wpcl_global_script', plugins_url( '/js/global.js', __FILE__ ), [ 'jquery' ], null, true );
+    wp_enqueue_script( 'wpcl_global_script' );
+    // Register and enqueue global stylesheet
+    wp_register_style( 'wpcl_global_script', plugins_url( '/css/global.css', __FILE__ ) );
+    wp_enqueue_style( 'wpcl_global_script' );
+}
+
+
+add_action('init', 'wpcl_editor_buttons');
 function wpcl_editor_buttons()
 {
     /**
@@ -24,7 +45,7 @@ function wpcl_editor_buttons()
 
         function wpcl_tdav_css($wp)
         {
-            $url = plugins_url() . "/wp-checklists";
+            $url = plugins_url() . '/wp-checklists';
 
             $wp .= ',' . $url . '/css/editor-style.css';
             return $wp;
@@ -45,7 +66,7 @@ if (! function_exists('wpcl_quicktags')) {
     function wpcl_quicktags()
     {
         $content = '<script type="text/javascript">';
-        $content .= 'QTags.addButton( "btn1", "check list", "<div class=\"wpcl-checklist\">", "</div>" );';
+        $content .= 'if (window.QTags) QTags.addButton( "btn1", "check list", "<div class=\"wpcl-checklist\">", "</div>" );';
         $content .= '</script>';
         echo $content;
     }
@@ -84,9 +105,6 @@ function wpcl_add_buttons()
  */
 function wpcl_register_button($buttons)
 {
-    $count_posts = wp_count_posts('wpcl_editor_buttons');
-    $count_posts = $count_posts->publish;
-
     $buttons[] = 'wpcl_button';
 
     return $buttons;
@@ -99,9 +117,24 @@ function wpcl_add_plugin($plugin_array)
 {
     $url = plugins_url() . "/wp-checklists";
 
-    $plugin_array['wpcl_button'] = $url . '/js/button-1-1.js';
+    $plugin_array['wpcl_button'] = $url . '/js/button-checklist.js';
 
     return $plugin_array;
+}
+
+
+/**
+ * Care for Advanced Custom Fields (ACF) plugin
+ */
+
+add_filter( 'acf/fields/wysiwyg/toolbars', 'continuums_wysiwyg_acf' );
+function continuums_wysiwyg_acf( $acfToolbars ) {
+    $acfToolbars['Basic']['1'][] = 'wpcl_button';
+    //echo '<pre>';
+    //print_r($acfToolbars);
+    //echo '</pre>';
+    //die;
+    return $acfToolbars;
 }
 
 // ------------------

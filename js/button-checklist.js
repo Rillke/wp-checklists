@@ -1,4 +1,9 @@
-// JavaScript Document
+/**
+ * This file is part of the WordPress Check lists plugin
+ *
+ * @author Rainer Rillke <rainer@rillke.com>
+ * @version 1.6.0.0
+ */
 
 function getBaseURL () {
    return location.protocol + '//' + location.hostname + 
